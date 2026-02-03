@@ -1,0 +1,100 @@
+﻿HOLIDAY NOTICE: Reviews and decisions for proposals received in December will likely be delayed due to the holiday season. Thank you for your understanding in advance.
+Swiss AI Initiative - Call for Small Grants
+
+
+This is the document for the small grants. For the large grants, see here.
+Overview
+AI advances are progressing at a speed and scale never seen before, with unprecedented opportunities for disruptive breakthrough applications. However, the centralization of this key technology by a small set of private companies poses risks regarding system transparency & reliability, protection of intellectual property & personal data, and alignment with societal values. Addressing these risks is urgent as societal institutions are not adapted to the disruption and impact of an accelerated pace of AI deployment. The next five years will be pivotal in setting the norms for the safe development and societal integration of AI technologies. 
+
+
+To unleash the benefits and mitigate the risks of these technologies for the Swiss economy and society, the Swiss AI initiative was created to build capacities for advanced large-scale trustworthy AI systems. The Swiss AI Initiative is operated by the Swiss National AI Institute (co-founded by ETH Zurich and EPFL). It brings together the leading AI researchers across Switzerland, leverages one of the world’s leading AI supercomputers (with over 10’000 GH200 GPUs) managed by the National Supercomputing Center (CSCS), and fosters collaborations among various Swiss stakeholders (academic institutions, industry, start-ups, federal administration, and the public sector). The Initiative will provide artifacts such as transparent and open software, models, and data releases, enabling their trustworthy use by various Swiss stakeholders, including SMEs and start-ups. 
+
+
+Through this collaboration, the Swiss AI Initiative will develop large-scale foundation models (the base of modern AI) that can reliably operate in multiple domains of core societal and economic interest, and develop new methods for large-scale training, multimodal integration, multilingual generality, alignment to societal values, uncertainty quantification, and sustainable learning. These developed systems will be aligned with the needs of Swiss stakeholders, enabling safe and effective deployment in sectors of importance for societal advancement and stability: education, law, climate, and more. Finally, the Swiss AI Initiative will engage with policymakers and associations to provide guidance & recommendations on effective policy and regulation around AI deployment that promotes economic growth while protecting the interests of Swiss citizens.
+Small Project Grants
+In line with the above goals, the Swiss AI Initiative provides funding to support the research and development of open science artifacts in core areas of foundation model development, as well as target application areas of critical societal importance.
+
+
+Small project grants are allocated for a period of six months, and provide access to the CSCS Alps infrastructure and compute resources for AI projects that require large-scale training, evaluation, and deployment capabilities to be realized. Typically, the compute amount requested might be between 20k and 50k compute hours, though smaller amounts are also possible. An overall goal is that after completion, successful small project grants could lead to a subsequent proposal for a large grant.
+Available Resources
+In 2025, through this and subsequent calls, we aim to distribute compute resources of 10-20M GPU hours via the small and large compute grants. 
+Timeline and deadlines
+Call Opens: February 24th, 2025
+Proposal Deadline: Rolling review, new submissions are sent to review regularly on the 1st of each month
+
+
+Decision Notification: Expected processing time approximately 6 weeks, depending on reviewers’ availability
+Earliest Project Start Date: Upon acceptance
+
+
+Submission form: https://www.swiss-ai.org/grants
+
+
+Scope
+The call is open for all proposals that align with the goals of the Swiss AI initiative and require compute resources to achieve their aims. Proposals should outline a research agenda that matches several of the following criteria:
+
+* advance core AI capabilities (scalability, efficiency, alignment, safety, multimodal integration or evaluation)
+* contribute to research advances in AI fundamentals or impact applications of AI
+* benefit the Swiss or wider European or global ecosystem and societal context
+* foster interdisciplinary collaboration and/or collaboration across more than one group
+* ensure ethical AI use and regulatory compliance
+* promote principles of open science (including open-source, open weights, open data)
+* foster participation of various stakeholders, such as public administration, SMEs, Startups, NGOs
+
+
+Eligibility
+Every individual or team is eligible to apply as long as at least one team member is employed at a recognized research institution in Switzerland, at a minimum 50% FTE research function as permanent or Professor tenure-track for the whole duration of the project.
+
+
+Proposals may include additional team members affiliated to private companies, such as administrations, NGOs, SMEs, or Startups, who can not request nor directly access any computing resource. 
+Application Format
+Proposal
+All documents must be submitted in English. The font size must be at least 10, line spacing 1.5, and margins of 2 cm on all sides. The documents must be submitted in PDF format. The research plan must not exceed 2 pages (A4 paper size), excluding the cover page, references and appendix (the appendix should include a descriptive table of contents outlining all preliminary results obtained for this project).
+
+
+Templates for the research plans are provided in Word and LaTex format. 
+
+
+The proposal should clearly describe:
+* the current state of the art in the related field, 
+* the objectives of the proposal, 
+* the expected activities and deliverables of this proposal (and the intended distribution & licensing strategy), 
+* the novelty and impact added as related to the scope of the call, and the importance of this project for Swiss, European, and global stakeholders,
+* the team and the collaboration model. Optionally, the proposal can also outline synergies and intended collaborations with the larger Swiss AI Initiative beyond the project.
+* Please also provide clear details on data availability and ethical considerations.
+
+
+Please include in the appendix a description of: (1) the technical execution plan (e.g., software frameworks), justification of the amount of CSCS compute hours required,[1] and if possible preliminary validation results at small scale running on the Grace-Hopper nodes on Alps.
+
+
+Team
+All applicants of the team must submit a CV according to the SNSF template. The CV will be shared with reviewers during peer review. Each proposal must name one or more scientific leads who are responsible for deliverables, reporting requirements, and coordination with the steering committee. Cross-institutional and international collaborations are allowed and strongly encouraged.
+
+
+Evaluation
+Small grant proposals will be reviewed by the Swiss National AI Institute, in coordination with CSCS and possible additional reviewers. 
+
+
+Evaluation Criteria
+Selection will be based on the following criteria:
+* scientific excellence (as assessed by the international external reviewers)
+* strength and complementarity of the team (as evidenced by prior collaboration, expertise diversity, and degree of inter-institutional or interdisciplinary collaboration)
+* expected impact (as evidenced by expected value of open science artifacts, such as models, data, evaluations, platforms, etc., as well as planned technology transfer & outreach activities) 
+* alignment with the goals of the Swiss AI Initiative 
+Decisions
+Selection decisions will be communicated not later than one month after submission of the proposal.
+After acceptance
+* A project report will be required upon completion of the project.
+* Selected projects must acknowledge the resources received by CSCS and the Swiss AI initiative.
+* Your project might be asked to clarify the IP arrangements within the collaboration, such as for example to clarify how or if results will be open-sourced.
+* The research carried out in the framework of the project must comply with the scientific integrity and research data management regulations of the respective institutions. Applicants must also comply with the legal regulations at the federal and cantonal levels as well as with the relevant EU regulations. If applicable, your project might be asked to work with the EPFL & ETH AI Centers to prepare documentation describing the model and due diligence on training data that could be used in the case of future requests for disclosure by authorities or litigation on copyright, personal data, AI regulation etc. under Swiss or applicable foreign law.
+
+
+Questions
+Please contact grants@swiss-ai.org with any questions related to the Call for Projects.
+
+
+
+
+________________
+[1] Hours granted will depend on the overall amount of compute requested for accepted proposals. We do not guarantee that the full number of requested hours will be granted if the proposal is accepted.
