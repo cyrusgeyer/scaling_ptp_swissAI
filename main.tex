@@ -4,7 +4,11 @@
 %% ============== Core Packages ==============
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=2cm]{geometry}
+
+% Swiss AI guideline requests 11pt Arial; we approximate with a standard sans-serif.
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 
 %% Math
 \usepackage{amsmath,amssymb,amsfonts}
@@ -16,6 +20,7 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \usepackage{float}
 
 %% Tables
@@ -38,10 +43,12 @@
 \usepackage{xspace}
 \usepackage[title]{appendix}
 
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
 %% Bibliography
 \usepackage{natbib}
 \bibliographystyle{plainnat}
-
 %% ============== Theorem Environments ==============
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
@@ -66,29 +73,311 @@
 %% ============== Document ==============
 \begin{document}
 
-\title{Your Title Here}
-\author{Author Name\\
-    \texttt{email@example.com}\\
-    Institution}
-\date{\today}
+\title{Scaling Parallel Token Prediction for Fast Large Language Model Inference}
+
+\author{
+    \textbf{Scientific Lead:} Julia Vogt (ETH Zurich) \\[0.5em]
+    \textbf{Co-Applicants:} \\
+    Felix Draxler (UC Irvine) \\
+    Stephan Mandt (UC Irvine) \\
+    Robin C. Geyer (ETH Zurich)
+
+}
+\date{}
 
 \maketitle
 
 \begin{abstract}
-    Your abstract here.
+    Parallel Token Prediction (PTP) is a recently proposed framework for parallel sequence generation in language models that predicts multiple \emph{dependent} tokens in a single transformer call by incorporating the sampling procedure into the model \citep{draxler2024parallel}. In prior work, PTP improves decoding efficiency as measured by accepted tokens per verification step (e.g., 4.18 task-average on SpecBench for a Vicuna-7B setting; 7.0 on code under teacher verification). This proposal targets the next step: scaling PTP training and evaluation to much larger foundation models on CSCS Alps, and releasing open science artifacts (code, evaluations, and model releases where licensing permits). The core hypothesis is that scaling PTP can materially reduce end-to-end latency of long-form reasoning and agentic workflows; healthcare decision support serves as an exemplary application domain.
 \end{abstract}
 
-\section{Introduction}\label{sec:intro}
+\vspace{2mm}
+\begin{figure}[H]
+    \centering
+    \tikzset{
+    token/.style={draw, rounded corners=1.5pt, minimum width=1.1cm, minimum height=0.6cm, inner sep=2pt, align=center, fill=white},
+    call/.style={draw, rounded corners=2pt, thick, minimum width=1.8cm, minimum height=0.7cm, inner sep=2pt, align=center, fill=blue!5},
+    arrow/.style={-{Latex[length=2mm,width=1.6mm]}, line width=0.4pt, rounded corners=2pt},
+    feedback/.style={-{Latex[length=2mm,width=1.6mm]}, line width=0.4pt, bend left=40},
+    faint/.style={opacity=0.5}
+    }
 
-Your introduction here. Example citation: \cite{bengio2013representation}.
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \textbf{Autoregressive decoding}\par
+        \vspace{2mm}
+        \begin{tikzpicture}[font=\scriptsize, node distance=8mm]
+            % Context at the top
+            \node[token, fill=yellow!10] (ctx) {context};
 
-\section{Methods}\label{sec:methods}
+            % Model calls in a row
+            \node[call, below=3mm of ctx] (c1) {Model\\call \#1};
+            \node[call, right=of c1] (c2) {Model\\call \#2};
+            \node[call, right=of c2, faint] (c3) {Model\\call \#3};
 
-\section{Results}\label{sec:results}
+            % Tokens below each call
+            \node[token, below=3mm of c1] (t1) {$\text{token}_1$};
+            \node[token, below=3mm of c2] (t2) {$\text{token}_2$};
+            \node[token, below=3mm of c3, faint] (t3) {$\text{token}_3$};
 
-\section{Discussion}\label{sec:discussion}
+            % Context feeds into first model call
+            \draw[arrow] (ctx) -- (c1);
 
-\section{Conclusion}\label{sec:conclusion}
+            % Vertical arrows from calls to tokens
+            \draw[arrow] (c1) -- (t1);
+            \draw[arrow] (c2) -- (t2);
+            \draw[arrow,faint] (c3) -- (t3);
+
+            % token_1 goes up and feeds into call #2 and #3 (along with context)
+            \draw[arrow] (t1.east) to[out=0, in=90] (c2.north);
+            \draw[arrow,faint] (t1.east) to[out=0, in=90] (c3.north);
+
+            % token_2 goes up and feeds into call #3 (along with context)
+            \draw[arrow,faint] (t2.east) to[out=0, in=90] (c3.north);
+
+            % Context flows through all calls (from top)
+            \draw[arrow] (ctx.east) to[out=0, in=90] (c2.north);
+            \draw[arrow,faint] (ctx.east) to[out=10, in=90] (c3.north);
+        \end{tikzpicture}
+        \par\vspace{1mm}
+        {\footnotesize\color{black!60}Sequential: context + each token feeds next call.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \textbf{Parallel Token Prediction (PTP)}\par
+        \vspace{2mm}
+        \begin{tikzpicture}[font=\scriptsize, node distance=8mm]
+            % Context at the top
+            \node[token, fill=yellow!10] (ctx) {context};
+
+            % Single model call
+            \node[call, below=3mm of ctx] (pc) {Single\\model call};
+
+            % Multiple output tokens
+            \node[token, below left=8mm and 12mm of pc] (pt1) {$\text{token}_1$};
+            \node[token, below=8mm of pc] (pt2) {$\text{token}_2$};
+            \node[token, below right=8mm and 12mm of pc] (pt3) {$\text{token}_3$};
+
+            % Context feeds into model
+            \draw[arrow] (ctx) -- (pc);
+
+            % Model produces multiple tokens
+            \draw[arrow] (pc) -- (pt1);
+            \draw[arrow] (pc) -- (pt2);
+            \draw[arrow] (pc) -- (pt3);
+        \end{tikzpicture}
+        \par\vspace{1mm}
+        {\footnotesize\color{black!60}Parallel: multiple dependent tokens per call \citep{draxler2024parallel}.}
+    \end{minipage}
+
+    \caption{Conceptual illustration: PTP targets the sequential decoding bottleneck by predicting multiple dependent tokens per model call \citep{draxler2024parallel}.}
+\end{figure}
+\vspace{-2mm}
+
+%% ============================================================
+%% PROPOSAL (max 5 pages excl. references per Swiss AI guidelines)
+%% ============================================================
+
+\section{Objectives and Alignment with Swiss AI Initiative}
+
+\textbf{Goal:} Scale Parallel Token Prediction (PTP) to large foundation models, enabling significantly faster LLM inference for time-critical applications.
+
+\textbf{Alignment with Swiss AI Initiative:}
+\begin{itemize}
+    \item \textbf{Advance core AI capabilities:} Efficiency and scalability of LLM inference
+    \item \textbf{Open science:} Open-source release of scaled PTP models and training code
+    \item \textbf{Cross-institutional collaboration:} ETH Zurich + UC Irvine
+    \item \textbf{Application domains:} Enables faster inference for agentic AI systems, with healthcare as exemplary use case
+\end{itemize}
+
+\textbf{Primary selling point:} PTP reduces the \emph{sequential} bottleneck of autoregressive decoding by predicting multiple dependent tokens per model call. In \citep{draxler2024parallel}, this is quantified via accepted tokens per verification step (higher implies fewer sequential steps). Our goal is to scale this approach to substantially larger models and provide reproducible evidence of latency reductions on long-form generation and agentic workflows.
+
+\section{State of the Art}
+
+Autoregressive LLMs generate one token per forward pass, creating a latency bottleneck for long outputs. Existing acceleration approaches:
+
+\begin{itemize}
+    \item \textbf{Speculative decoding:} Small draft model proposes tokens, large model verifies. Still sequential at the draft level.
+    \item \textbf{Multi-token prediction:} Predicts multiple tokens independently. Independence assumption limits quality---produces incoherent sequences (e.g., ``\texttt{def numpy}'', ``\texttt{import find}'').
+    \item \textbf{Discrete diffusion:} Iterative refinement, but also assumes token independence per step.
+\end{itemize}
+
+\textbf{PTP} \citep{draxler2024parallel}\textbf{:} Predicts multiple \emph{dependent} tokens in a single forward pass by feeding auxiliary random variables into the model. The paper proves expressivity matching autoregressive models (no independence assumption) and reports strong empirical decoding efficiency (e.g., 4.18 accepted tokens/step task-average on SpecBench in a Vicuna-7B setting; and 7.0 accepted tokens/step on code in a distilled setup).
+
+\textbf{Gap:} PTP has only been demonstrated at 1--7B scale. Scaling to frontier models (70B+) is unexplored.
+
+\section{Activities and Deliverables}
+
+\subsection{Work Packages}
+
+\textbf{WP1: Scaling PTP Training} (Months 1--6)
+\begin{itemize}
+    \item Scale PTP distillation and/or fine-tuning to larger foundation models on CSCS Alps
+    \item Validate training stability, throughput, and scaling behavior (feasibility focus)
+    \item Compute plan: use $\approx$2/3 of the allocated compute in the first 6 months (Swiss AI guideline)
+\end{itemize}
+
+\textbf{WP2: Inference Optimization} (Months 4--9)
+\begin{itemize}
+    \item Efficient PTP inference implementation with verification-based decoding
+    \item Systems work (serving and evaluation harness) with Swiss AI engineering support
+\end{itemize}
+
+\textbf{WP3: Evaluation and Benchmarking} (Months 6--12)
+\begin{itemize}
+    \item Evaluation on long-form generation and reasoning-oriented benchmarks (latency-focused)
+    \item Evaluation in agentic workflows (multi-step tool use) as a latency stress test
+    \item Domain-specific pilot evaluation in healthcare-related settings (as application exemplar; method-first)
+\end{itemize}
+
+\subsection{Deliverables}
+
+\begin{itemize}
+    \item Open-source training and inference code for scaled PTP (including reproducible evaluation)
+    \item Model releases where third-party licensing permits (preference for open-weight bases; otherwise adapters/checkpoints)
+    \item Benchmark results and a short technical report summarizing scaling and latency findings
+\end{itemize}
+
+\subsection{Distribution and Licensing}
+
+Code and evaluation artifacts released under a permissive open-source license (Apache 2.0 or similar). Model releases will follow the most permissive option compatible with third-party licensing (preference for open-weight foundations).
+
+\subsection{Compute Estimate}
+
+\textbf{Assumptions:}
+\begin{itemize}
+    \item Target model size: 70B parameters
+    \item Training tokens: $T$ tokens (distillation or fine-tuning corpus)
+    \item Measured throughput on Alps: $X$ tokens/GPU-hour (to be established in feasibility runs)
+\end{itemize}
+
+\textbf{Rough calculation (plug-in):}
+\[
+    ext{GPU-hours} = \frac{T \times \text{epochs} \times \text{overhead factor}}{X}
+\]
+
+\textbf{Preliminary allocation request:} % TODO: Fill after feasibility test
+\begin{itemize}
+    \item WP1 (Training/finetuning): [TBD] GPU-hours
+    \item WP2 (Systems/inference): [TBD] GPU-hours
+    \item WP3 (Evaluation): [TBD] GPU-hours
+    \item \textbf{Total:} [TBD] GPU-hours (expectation: can exceed 500K GPU-hours)
+\end{itemize}
+
+\textit{Note: Precise estimates require feasibility experiments on Alps. We request a small preparatory allocation to validate throughput assumptions.}
+
+\subsection{Budget Summary}
+
+\textbf{Personnel (ETH Zurich, requiring 1:1 matching):}
+\begin{itemize}
+    \item 1 Postdoc, 12 months: $\sim$CHF 130k total (CHF 65k requested + CHF 65k matching from ETH)
+\end{itemize}
+
+\textbf{Research expenses:} $\sim$CHF 40k (workshops, travel, outreach)
+
+\textbf{Engineering support requested:} 12 FTE-months (from Swiss AI core team, no matching required)
+
+\textbf{Total requested funding:} $\sim$CHF 105k + compute allocation + engineering support
+
+\textit{Note: Exact salary figures to be confirmed by ETH administration.}
+
+\section{Team and Collaboration Model}
+
+\begin{tabular}{lll}
+    \toprule
+    \textbf{Name}  & \textbf{Affiliation} & \textbf{Role}                      \\
+    \midrule
+    Julia Vogt     & ETH Zurich           & Scientific Lead                    \\
+    Robin C. Geyer & ETH Zurich           & Co-Applicant, Project Coordination \\
+    Stephan Mandt  & UC Irvine            & Co-Applicant, PTP Method Expert    \\
+    Felix Draxler  & UC Irvine            & Co-Applicant, PTP Method Expert    \\
+    \bottomrule
+\end{tabular}
+
+\vspace{1em}
+
+\textbf{Expertise:}
+\begin{itemize}
+    \item \textbf{Mandt \& Draxler:} Original PTP authors; deep expertise in normalizing flows, variational inference, and probabilistic ML. Stephan Mandt leads the AI in Science Institute at UC Irvine.
+    \item \textbf{Vogt:} Associate Professor at ETH Zurich, leading the Medical Data Science Group. Expert in interpretable ML, generative models (VAEs, diffusion), and clinical AI applications. Extensive publication record at NeurIPS, ICML, ICLR on concept bottleneck models, multimodal learning, and healthcare ML.
+    \item \textbf{Geyer:} Postdoctoral researcher at ETH Zurich (Vogt group) and Charité Berlin. PhD on representation learning for critical care. Expertise in domain adaptation, clinical time series, and privacy-preserving ML. Prior collaboration with Mandt.
+\end{itemize}
+
+\textbf{Collaboration model:}
+\begin{itemize}
+    \item ETH team: Large-scale training on CSCS, project coordination, downstream evaluation
+    \item UCI team: Methodological expertise, algorithm development (no personnel funding requested, external collaborators)
+\end{itemize}
+
+\textbf{Requested Personnel (ETH Zurich):}
+\begin{itemize}
+    \item 1 Postdoc (12 months)
+\end{itemize}
+
+\textbf{Requested Engineering Support (Swiss AI):}
+\begin{itemize}
+    \item 12 FTE-months engineering support for scaling infrastructure, training pipelines, and inference optimization
+\end{itemize}
+
+\section{Novelty and Impact}
+
+\textbf{Novelty:}
+\begin{itemize}
+    \item First scaling of PTP to frontier model sizes
+    \item Novel training strategies for large-scale PTP
+\end{itemize}
+
+\textbf{Impact:}
+\begin{itemize}
+    \item \textbf{Inference cost reduction:} 4--7$\times$ fewer forward passes for same output
+    \item \textbf{Time-critical applications:} Enables real-time LLM inference where latency matters (clinical decision support, autonomous agents)
+    \item \textbf{Swiss/European ecosystem:} Open models reduce dependence on proprietary US/China systems
+\end{itemize}
+
+\textbf{Potential upside (speculative):} % TODO @Felix: please review/expand
+At scale, PTP models trained from scratch (not distilled) may develop novel reasoning capabilities by ``thinking in longer sequences.'' Early evidence from multi-token prediction literature suggests potential quality improvements, not just speed. We consider this a secondary objective pending empirical validation at scale.
+
+\section{Importance for Stakeholders}
+
+\textbf{Swiss stakeholders:}
+\begin{itemize}
+    \item \textbf{Industry/SMEs:} Reduced inference costs for LLM deployment; faster response times for customer-facing applications
+    \item \textbf{Healthcare sector:} Faster clinical decision support systems; enables real-time agentic workflows in time-critical settings
+    \item \textbf{Academia:} Open foundation models and code for further research
+\end{itemize}
+
+\textbf{European/Global:}
+\begin{itemize}
+    \item Contribution to open AI ecosystem, reducing dependence on proprietary systems
+    \item State-of-the-art in efficient LLM inference, applicable across domains
+\end{itemize}
+
+\section{Data Availability and Ethical Considerations}
+
+\textbf{Data:}
+\begin{itemize}
+    \item Training/evaluation: public datasets and standard benchmarks used in the PTP line of work (no new data collection in this proposal)
+    \item No patient-level personal data is required for the core method development
+\end{itemize}
+
+\textbf{Ethics:}
+\begin{itemize}
+    \item Faster inference may amplify both beneficial and harmful uses
+    \item Mitigation: Focus on open release enabling community oversight
+    \item Clinical angle: evaluation/benchmarking only; no patient interaction in this project
+\end{itemize}
+
+\textbf{Legal and regulatory compliance (as required by the call):}
+\begin{itemize}
+    \item Ensure compliance with applicable data protection laws and regulations (e.g., Swiss FADP; GDPR where applicable)
+    \item Document provenance and licensing of any datasets and model components used; prefer permissively licensed resources
+    \item Where model weights are released, provide accompanying documentation on training data sources and licensing constraints to support due diligence
+\end{itemize}
+
+%% ============================================================
+%% REFERENCES
+%% ============================================================
 
 \bibliography{bibliography}
 
