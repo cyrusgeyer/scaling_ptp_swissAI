@@ -1,0 +1,95 @@
+% Clean Research Paper / Grant Proposal Template
+\documentclass[11pt,a4paper]{article}
+
+%% ============== Core Packages ==============
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+
+%% Math
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{bm}  % Bold math symbols
+
+%% Graphics and Figures
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{float}
+
+%% Tables
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{siunitx}
+
+%% Algorithms
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+
+%% Formatting
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage[inline]{enumitem}
+\usepackage{xspace}
+\usepackage[title]{appendix}
+
+%% Bibliography
+\usepackage{natbib}
+\bibliographystyle{plainnat}
+
+%% ============== Theorem Environments ==============
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+%% ============== Custom Commands ==============
+\input{math_commands}
+
+\newcommand{\cmark}{\checkmark}
+\newcommand{\xmark}{\times}
+\newcommand{\trace}{\mathrm{Tr}}
+
+%% ============== Document ==============
+\begin{document}
+
+\title{Your Title Here}
+\author{Author Name\\
+    \texttt{email@example.com}\\
+    Institution}
+\date{\today}
+
+\maketitle
+
+\begin{abstract}
+    Your abstract here.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Your introduction here. Example citation: \cite{bengio2013representation}.
+
+\section{Methods}\label{sec:methods}
+
+\section{Results}\label{sec:results}
+
+\section{Discussion}\label{sec:discussion}
+
+\section{Conclusion}\label{sec:conclusion}
+
+\bibliography{bibliography}
+
+\end{document}

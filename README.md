@@ -1,40 +1,55 @@
-# LaTeX Setup Notes for This Project
+# Research Paper / Grant Proposal Template
 
-This project uses the Springer `sn-jnl.cls` template and requires a specific setup to properly compile citations, tables, and Lua-enhanced content.
+A clean, minimal LaTeX template for research papers or grant proposals.
+
+## 📁 Structure
+
+- `main.tex` — Main document
+- `math_commands.tex` — Reusable math notation (vectors, matrices, etc.)
+- `bibliography.bib` — Bibliography file
 
 ## 🧱 Requirements
 
-- **Compiler**: `lualatex` (not `pdflatex` or `xelatex`)
-- **Citation backend**: `bibtex` (not `biber`)
-- **Bib style**: `sn-basic.bst` (must be in the project root)
+- **Compiler**: `pdflatex` (or `lualatex`/`xelatex`)
+- **Citation backend**: `bibtex`
 
-## 📁 File Setup
+## 🔨 Compilation
 
-- Make sure the bibliography file is named `sn-bibliography.bib`
-- Ensure the `.bst` file matching your selected style (e.g., `sn-basic.bst`) is present in the **project root** directory — it is not always bundled with TeX Live.
-- Use `\bibliography{sn-bibliography}` and **do not** use `biblatex` or `\addbibresource`.
+```bash
+pdflatex main
+bibtex main
+pdflatex main
+pdflatex main
+```
+
+Or use VS Code with LaTeX Workshop extension (recommended recipe below).
 
 ## 🛠 VS Code Settings (`.vscode/settings.json`)
 
-Make sure `latex-workshop` is configured to use the correct build sequence:
-
 ```json
-"latex-workshop.latex.recipes": [
-  {
-    "name": "lualatex -> bibtex -> lualatex",
-    "tools": ["lualatex", "bibtex", "lualatex", "lualatex"]
-  }
-],
-"latex-workshop.latex.tools": [
-  {
-    "name": "lualatex",
-    "command": "lualatex",
-    "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "%DOC%"]
-  },
-  {
-    "name": "bibtex",
-    "command": "bibtex",
-    "args": ["%DOCFILE%"]
-  }
-]
+{
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex -> bibtex -> pdflatex x2",
+      "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": ["%DOCFILE%"]
+    }
+  ]
+}
 ```
