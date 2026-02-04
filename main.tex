@@ -20,7 +20,7 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,positioning,calc,backgrounds}
 \usepackage{float}
 
 %% Tables
@@ -96,9 +96,11 @@
     \tikzset{
     token/.style={draw, rounded corners=1.5pt, minimum width=1.1cm, minimum height=0.6cm, inner sep=2pt, align=center, fill=white},
     call/.style={draw, rounded corners=2pt, thick, minimum width=1.8cm, minimum height=0.7cm, inner sep=2pt, align=center, fill=blue!5},
+    random/.style={draw, rounded corners=1.5pt, minimum width=0.9cm, minimum height=0.5cm, inner sep=1.5pt, align=center, fill=green!10},
     arrow/.style={-{Latex[length=2mm,width=1.6mm]}, line width=0.4pt, rounded corners=2pt},
     feedback/.style={-{Latex[length=2mm,width=1.6mm]}, line width=0.4pt, bend left=40},
-    faint/.style={opacity=0.5}
+    faint/.style={opacity=0.5},
+    junction/.style={circle, fill=black, inner sep=1.2pt}
     }
 
     \begin{minipage}[t]{0.48\textwidth}
@@ -106,37 +108,62 @@
         \textbf{Autoregressive decoding}\par
         \vspace{2mm}
         \begin{tikzpicture}[font=\scriptsize, node distance=8mm]
-            % Context at the top
-            \node[token, fill=yellow!10] (ctx) {context};
-
             % Model calls in a row
-            \node[call, below=3mm of ctx] (c1) {Model\\call \#1};
+            \node[call] (c1) {Model\\call \#1};
+            \node[call, right=of c1] (c2) {Model\\call \#2};
+            \node[call, right=of c2, faint] (c3) {Model\\call \#3};
+
+            % Context directly above model call #1
+            \node[token, fill=yellow!10, above=3mm of c1] (ctx) {context};
             \node[call, right=of c1] (c2) {Model\\call \#2};
             \node[call, right=of c2, faint] (c3) {Model\\call \#3};
 
             % Tokens below each call
-            \node[token, below=3mm of c1] (t1) {$\text{token}_1$};
-            \node[token, below=3mm of c2] (t2) {$\text{token}_2$};
-            \node[token, below=3mm of c3, faint] (t3) {$\text{token}_3$};
+            \node[token, below=8mm of c1] (t1) {$\text{token}_1$};
+            \node[token, below=8mm of c2] (t2) {$\text{token}_2$};
+            \node[token, below=8mm of c3, faint] (t3) {$\text{token}_3$};
 
-            % Context feeds into first model call
-            \draw[arrow] (ctx) -- (c1);
+            % Define junction points on the vertical arrows (midway between call and token)
+            \coordinate (j1) at ($(c1)!0.5!(t1)$);
+            \coordinate (j2) at ($(c2)!0.5!(t2)$);
+            \coordinate (j3) at ($(c3)!0.5!(t3)$);
 
-            % Vertical arrows from calls to tokens
-            \draw[arrow] (c1) -- (t1);
-            \draw[arrow] (c2) -- (t2);
-            \draw[arrow,faint] (c3) -- (t3);
+            % Random numbers positioned to the left, vertically centered between call and token
+            \node[random, left=3mm of j1] (r1) {$u_1$};
+            \node[random, left=3mm of j2] (r2) {$u_2$};
+            \node[random, left=3mm of j3, faint] (r3) {$u_3$};
 
-            % token_1 goes up and feeds into call #2 and #3 (along with context)
-            \draw[arrow] (t1.east) to[out=0, in=90] (c2.north);
-            \draw[arrow,faint] (t1.east) to[out=0, in=90] (c3.north);
+            % ===== BACKGROUND LAYER: All arrows =====
+            \begin{scope}[on background layer]
+                % Context to call #1: straight down
+                \draw[arrow] (ctx.south) -- (c1.north);
+                % Context to call #2: leave right center horizontally, enter top center vertically
+                \draw[arrow] (ctx.east) .. controls +(right:8mm) and +(up:8mm) .. (c2.north);
+                % Context to call #3: leave right center horizontally, enter top center vertically
+                \draw[arrow,faint] (ctx.east) .. controls +(right:15mm) and +(up:8mm) .. (c3.north);
 
-            % token_2 goes up and feeds into call #3 (along with context)
-            \draw[arrow,faint] (t2.east) to[out=0, in=90] (c3.north);
+                % Vertical arrows from calls to tokens
+                \draw[arrow] (c1) -- (t1);
+                \draw[arrow] (c2) -- (t2);
+                \draw[arrow,faint] (c3) -- (t3);
 
-            % Context flows through all calls (from top)
-            \draw[arrow] (ctx.east) to[out=0, in=90] (c2.north);
-            \draw[arrow,faint] (ctx.east) to[out=10, in=90] (c3.north);
+                % Lines from random numbers to junction points with circles
+                \draw[line width=0.4pt] (r1.east) -- (j1);
+                \draw[line width=0.4pt] (r2.east) -- (j2);
+                \draw[line width=0.4pt, faint] (r3.east) -- (j3);
+
+                % token_1 goes up and feeds into call #2 at left center (entering horizontally)
+                \draw[arrow] (t1.east) .. controls +(right:8mm) and +(left:8mm) .. (c2.west);
+                \draw[arrow,faint] (t1.east) .. controls +(right:14mm) and +(left:10mm) .. (c3.west);
+
+                % token_2 goes up and feeds into call #3 at left center (entering horizontally)
+                \draw[arrow,faint] (t2.east) .. controls +(right:8mm) and +(left:8mm) .. (c3.west);
+            \end{scope}
+
+            % Junction circles on top
+            \node[junction] at (j1) {};
+            \node[junction] at (j2) {};
+            \node[junction, faint] at (j3) {};
         \end{tikzpicture}
         \par\vspace{1mm}
         {\footnotesize\color{black!60}Sequential: context + each token feeds next call.}
@@ -147,21 +174,25 @@
         \textbf{Parallel Token Prediction (PTP)}\par
         \vspace{2mm}
         \begin{tikzpicture}[font=\scriptsize, node distance=8mm]
-            % Context at the top
-            \node[token, fill=yellow!10] (ctx) {context};
-
             % Single model call
-            \node[call, below=3mm of ctx] (pc) {Single\\model call};
+            \node[call] (pc) {Single\\model call};
+
+            % Context directly above model call
+            \node[token, fill=yellow!10, above=3mm of pc] (ctx) {context};
+
+            % Random numbers to the left of model call
+            \node[random, left=3mm of pc] (rall) {$u_1, u_2, u_3$};
 
             % Multiple output tokens
             \node[token, below left=8mm and 12mm of pc] (pt1) {$\text{token}_1$};
             \node[token, below=8mm of pc] (pt2) {$\text{token}_2$};
             \node[token, below right=8mm and 12mm of pc] (pt3) {$\text{token}_3$};
 
-            % Context feeds into model
-            \draw[arrow] (ctx) -- (pc);
+            % Context to model: straight down
+            \draw[arrow] (ctx.south) -- (pc.north);
 
-            % Model produces multiple tokens
+            % Random numbers feed into model call from the left
+            \draw[arrow] (rall.east) -- (pc.west);            % Model produces multiple tokens
             \draw[arrow] (pc) -- (pt1);
             \draw[arrow] (pc) -- (pt2);
             \draw[arrow] (pc) -- (pt3);
@@ -170,7 +201,7 @@
         {\footnotesize\color{black!60}Parallel: multiple dependent tokens per call \citep{draxler2026parallel}.}
     \end{minipage}
 
-    \caption{Conceptual illustration: PTP targets the sequential decoding bottleneck by predicting multiple dependent tokens per model call \citep{draxler2026parallel}.}
+    \caption{Autoregressive (AR) decoding requires sequential model calls where each token depends on prior context and tokens. Random variables $u_i$ represent the sampling procedure. PTP predicts multiple dependent tokens in a single model call by incorporating the auxiliaries $u_i$ into the model, enabling parallel generation without restrictive independence assumptions \citep{draxler2026parallel}.}
 \end{figure}
 \vspace{-2mm}
 
