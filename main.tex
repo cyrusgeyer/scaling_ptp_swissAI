@@ -81,14 +81,13 @@
     Felix Draxler (UC Irvine) \\
     Stephan Mandt (UC Irvine) \\
     Robin C. Geyer (ETH Zurich)
-
 }
 \date{}
 
 \maketitle
 
 \begin{abstract}
-    Parallel Token Prediction (PTP) is a recently proposed framework for parallel sequence generation in language models that predicts multiple \emph{dependent} tokens in a single transformer call by incorporating the sampling procedure into the model \citep{draxler2024parallel}. In prior work, PTP improves decoding efficiency as measured by accepted tokens per verification step (e.g., 4.18 task-average on SpecBench for a Vicuna-7B setting; 7.0 on code under teacher verification). This proposal targets the next step: scaling PTP training and evaluation to much larger foundation models on CSCS Alps, and releasing open science artifacts (code, evaluations, and model releases where licensing permits). The core hypothesis is that scaling PTP can materially reduce end-to-end latency of long-form reasoning and agentic workflows; healthcare decision support serves as an exemplary application domain.
+    Parallel Token Prediction (PTP) is a recently proposed framework for parallel sequence generation in language models that predicts multiple \emph{dependent} tokens in a single transformer call by incorporating the sampling procedure into the model \citep{draxler2026parallel}. In prior work, PTP improves decoding efficiency as measured by accepted tokens per verification step (e.g., 4.18 task-average on SpecBench for a Vicuna-7B setting; 7.0 on code under teacher verification). This proposal targets the next step: scaling PTP training and evaluation to much larger foundation models on CSCS Alps, and releasing open science artifacts (code, evaluations, and model releases where licensing permits). The core hypothesis is that scaling PTP can materially reduce end-to-end latency of long-form reasoning and agentic workflows; healthcare decision support serves as an exemplary application domain.
 \end{abstract}
 
 \vspace{2mm}
@@ -168,10 +167,10 @@
             \draw[arrow] (pc) -- (pt3);
         \end{tikzpicture}
         \par\vspace{1mm}
-        {\footnotesize\color{black!60}Parallel: multiple dependent tokens per call \citep{draxler2024parallel}.}
+        {\footnotesize\color{black!60}Parallel: multiple dependent tokens per call \citep{draxler2026parallel}.}
     \end{minipage}
 
-    \caption{Conceptual illustration: PTP targets the sequential decoding bottleneck by predicting multiple dependent tokens per model call \citep{draxler2024parallel}.}
+    \caption{Conceptual illustration: PTP targets the sequential decoding bottleneck by predicting multiple dependent tokens per model call \citep{draxler2026parallel}.}
 \end{figure}
 \vspace{-2mm}
 
@@ -191,7 +190,7 @@
     \item \textbf{Application domains:} Enables faster inference for agentic AI systems, with healthcare as exemplary use case
 \end{itemize}
 
-\textbf{Primary selling point:} PTP reduces the \emph{sequential} bottleneck of autoregressive decoding by predicting multiple dependent tokens per model call. In \citep{draxler2024parallel}, this is quantified via accepted tokens per verification step (higher implies fewer sequential steps). Our goal is to scale this approach to substantially larger models and provide reproducible evidence of latency reductions on long-form generation and agentic workflows.
+\textbf{Primary selling point:} PTP reduces the \emph{sequential} bottleneck of autoregressive decoding by predicting multiple dependent tokens per model call. In \citep{draxler2026parallel}, this is quantified via accepted tokens per verification step (higher implies fewer sequential steps). Our goal is to scale this approach to substantially larger models and provide reproducible evidence of latency reductions on long-form generation and agentic workflows.
 
 \section{State of the Art}
 
@@ -203,7 +202,7 @@ Autoregressive LLMs generate one token per forward pass, creating a latency bott
     \item \textbf{Discrete diffusion:} Iterative refinement, but also assumes token independence per step.
 \end{itemize}
 
-\textbf{PTP} \citep{draxler2024parallel}\textbf{:} Predicts multiple \emph{dependent} tokens in a single forward pass by feeding auxiliary random variables into the model. The paper proves expressivity matching autoregressive models (no independence assumption) and reports strong empirical decoding efficiency (e.g., 4.18 accepted tokens/step task-average on SpecBench in a Vicuna-7B setting; and 7.0 accepted tokens/step on code in a distilled setup).
+\textbf{PTP} \citep{draxler2026parallel}\textbf{:} Predicts multiple \emph{dependent} tokens in a single forward pass by feeding auxiliary random variables into the model. The paper proves expressivity matching autoregressive models (no independence assumption) and reports strong empirical decoding efficiency (e.g., 4.18 accepted tokens/step task-average on SpecBench in a Vicuna-7B setting; and 7.0 accepted tokens/step on code in a distilled setup).
 
 \textbf{Gap:} PTP has only been demonstrated at 1--7B scale. Scaling to frontier models (70B+) is unexplored.
 
